@@ -13,8 +13,8 @@ const KEYS = [
   { p: 0.3, pos: [0, 0.1, 3.5] as const, look: [0, 0, -6] as const },
   { p: 0.44, pos: [0.6, -0.6, -3.5] as const, look: [0, -0.6, -12] as const },
   { p: 0.6, pos: [-1.2, -0.9, -9.5] as const, look: [0.6, 0, -18] as const },
-  { p: 0.78, pos: [0, -0.2, -13.5] as const, look: [0, 0.6, -22] as const },
-  { p: 1.0, pos: [0, 0.9, -10.5] as const, look: [0, 1.2, -20] as const },
+  { p: 0.78, pos: [0, -0.2, -13.5] as const, look: [0, 0.8, -22] as const },
+  { p: 1.0, pos: [0, 1.0, -11] as const, look: [0, 1.4, -22] as const },
 ];
 
 function smooth(t: number) {
@@ -125,8 +125,8 @@ const CORE_FRAG = /* glsl */ `
     vec3 V = normalize(vView);
     float fres = pow(1.0 - max(dot(N, V), 0.0), 2.0);
     float sheen = pow(max(dot(N, normalize(vec3(0.35, 0.85, 0.6))), 0.0), 2.5);
-    vec3 col = uDeep + uMid * 0.55 + uLight * (sheen * 0.7 + fres * 1.25);
-    gl_FragColor = vec4(col, 0.9);
+    vec3 col = uDeep + uMid * 0.32 + uLight * (sheen * 0.55 + fres * 1.6);
+    gl_FragColor = vec4(col, 0.92);
   }
 `;
 
@@ -179,9 +179,9 @@ function buildFormation(scale: number, coreColor: number) {
     transparent: true,
     depthWrite: false,
   });
-  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45 * scale, 4), coreMat);
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0 * scale, 4), coreMat);
   group.add(core);
-  const glowTex = makeGlowTexture("rgba(80,160,255,0.85)", "rgba(47,141,255,0.3)");
+  const glowTex = makeGlowTexture("rgba(70,140,240,0.6)", "rgba(47,141,255,0.22)");
   const glow = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: glowTex,
@@ -190,9 +190,9 @@ function buildFormation(scale: number, coreColor: number) {
       blending: THREE.AdditiveBlending,
     })
   );
-  glow.scale.set(9 * scale, 9 * scale, 1);
+  glow.scale.set(6.5 * scale, 6.5 * scale, 1);
   group.add(glow);
-  return { group, lattice, outer, core, coreMat, glow, glowTex, baseGlow: 9 * scale };
+  return { group, lattice, outer, core, coreMat, glow, glowTex, baseGlow: 6.5 * scale };
 }
 
 export default function JourneyScene() {
@@ -254,9 +254,9 @@ export default function JourneyScene() {
     fa.group.position.set(0, 0.4, 0);
     scene.add(fa.group);
 
-    // ---- formation B (finale, z=-20) ----
-    const fb = buildFormation(0.7, 0x7a5cff);
-    fb.group.position.set(0, 1, -20);
+    // ---- formation B (finale, z=-22): smaller, violet, distant destination ----
+    const fb = buildFormation(0.55, 0x7a5cff);
+    fb.group.position.set(0, 1.5, -22);
     scene.add(fb.group);
 
     // ---- orbit ring around formation A ----
