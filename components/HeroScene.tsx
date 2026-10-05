@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const DUST_COUNT = 4000;
+const DUST_COUNT = 2200;
 const ORBIT_COUNT = 500;
 
 const DUST_VERT = /* glsl */ `
@@ -21,7 +21,7 @@ const DUST_VERT = /* glsl */ `
     vDepth = aRand;
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = (1.0 + aRand * 2.2) * (130.0 / -mv.z);
+    gl_PointSize = (0.6 + aRand * 1.2) * (130.0 / -mv.z);
   }
 `;
 
@@ -32,7 +32,7 @@ const DUST_FRAG = /* glsl */ `
     if (length(uv) > 0.5) discard;
     float soft = smoothstep(0.5, 0.06, length(uv));
     vec3 col = mix(vec3(0.08, 0.22, 0.55), vec3(0.45, 0.72, 1.0), vDepth);
-    gl_FragColor = vec4(col, soft * (0.2 + vDepth * 0.5));
+    gl_FragColor = vec4(col, soft * (0.12 + vDepth * 0.38));
   }
 `;
 
