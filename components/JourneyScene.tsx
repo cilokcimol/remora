@@ -143,12 +143,15 @@ function makeGlowTexture(inner: string, mid: string): THREE.CanvasTexture {
   return new THREE.CanvasTexture(c);
 }
 
-function buildFormation(scale: number, coreColor: number) {
+function buildFormation(
+  scale: number,
+  scheme: { core: number; lattice: number; outer: number; light: number; glowInner: string; glowMid: string }
+) {
   const group = new THREE.Group();
   const lattice = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(3.4 * scale, 1)),
     new THREE.LineBasicMaterial({
-      color: 0x4da3ff,
+      color: scheme.lattice,
       transparent: true,
       opacity: 0.5,
       blending: THREE.AdditiveBlending,
@@ -159,7 +162,7 @@ function buildFormation(scale: number, coreColor: number) {
   const outer = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(4.6 * scale, 1)),
     new THREE.LineBasicMaterial({
-      color: 0x1c5fc4,
+      color: scheme.outer,
       transparent: true,
       opacity: 0.16,
       blending: THREE.AdditiveBlending,
@@ -173,15 +176,15 @@ function buildFormation(scale: number, coreColor: number) {
     uniforms: {
       uTime: { value: 0 },
       uDeep: { value: new THREE.Color(0x061a44) },
-      uMid: { value: new THREE.Color(coreColor) },
-      uLight: { value: new THREE.Color(0xbfe0ff) },
+      uMid: { value: new THREE.Color(scheme.core) },
+      uLight: { value: new THREE.Color(scheme.light) },
     },
     transparent: true,
     depthWrite: false,
   });
   const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.0 * scale, 4), coreMat);
   group.add(core);
-  const glowTex = makeGlowTexture("rgba(70,140,240,0.6)", "rgba(47,141,255,0.22)");
+  const glowTex = makeGlowTexture(scheme.glowInner, scheme.glowMid);
   const glow = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: glowTex,
@@ -249,13 +252,27 @@ export default function JourneyScene() {
     });
     scene.add(new THREE.Points(dustGeo, dustMat));
 
-    // ---- formation A (hero, z=0) ----
-    const fa = buildFormation(1, 0x2f8dff);
+    // ---- formation A (hero, z=0): blue ----
+    const fa = buildFormation(1, {
+      core: 0x2f8dff,
+      lattice: 0x4da3ff,
+      outer: 0x1c5fc4,
+      light: 0xbfe0ff,
+      glowInner: "rgba(70,140,240,0.6)",
+      glowMid: "rgba(47,141,255,0.22)",
+    });
     fa.group.position.set(0, 0.4, 0);
     scene.add(fa.group);
 
-    // ---- formation B (finale, z=-22): smaller, violet, distant destination ----
-    const fb = buildFormation(0.55, 0x7a5cff);
+    // ---- formation B (finale, z=-22): violet, distant destination ----
+    const fb = buildFormation(0.55, {
+      core: 0x7a5cff,
+      lattice: 0x9a7fff,
+      outer: 0x5a3fd4,
+      light: 0xd9ccff,
+      glowInner: "rgba(150,120,255,0.6)",
+      glowMid: "rgba(122,92,255,0.22)",
+    });
     fb.group.position.set(0, 1.5, -22);
     scene.add(fb.group);
 
