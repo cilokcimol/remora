@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --color-sui: #298dff;
+  --color-navy: #071224;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #071224;
+}
+
+::selection {
+  background: #298dff;
+  color: #fff;
+}
+
+/* slim scrollbars for the chat panel */
+*::-webkit-scrollbar {
+  width: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(41, 141, 255, 0.35);
+  border-radius: 999px;
+}
