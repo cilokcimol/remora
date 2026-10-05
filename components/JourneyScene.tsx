@@ -3,25 +3,58 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const DUST_COUNT = 2200;
+const DUST_COUNT = 2600;
 const ORBIT_COUNT = 500;
+
+// Camera journey keyframes across full-page scroll (p = 0..1)
+const KEYS = [
+  { p: 0.0, pos: [0, 0.5, 13] as const, look: [0, 0.3, 0] as const },
+  { p: 0.16, pos: [0, 0.35, 8.5] as const, look: [0, 0.2, 0] as const },
+  { p: 0.3, pos: [0, 0.1, 3.5] as const, look: [0, 0, -6] as const },
+  { p: 0.44, pos: [0.6, -0.6, -3.5] as const, look: [0, -0.6, -12] as const },
+  { p: 0.6, pos: [-1.2, -0.9, -9.5] as const, look: [0.6, 0, -18] as const },
+  { p: 0.78, pos: [0, -0.2, -13.5] as const, look: [0, 0.6, -22] as const },
+  { p: 1.0, pos: [0, 0.9, -10.5] as const, look: [0, 1.2, -20] as const },
+];
+
+function smooth(t: number) {
+  return t * t * (3 - 2 * t);
+}
+
+function sampleJourney(p: number) {
+  const c = Math.min(1, Math.max(0, p));
+  let i = 0;
+  while (i < KEYS.length - 2 && c > KEYS[i + 1].p) i++;
+  const a = KEYS[i];
+  const b = KEYS[i + 1];
+  const t = smooth((c - a.p) / Math.max(1e-5, b.p - a.p));
+  const lerp = (u: number, v: number) => u + (v - u) * t;
+  return {
+    pos: [lerp(a.pos[0], b.pos[0]), lerp(a.pos[1], b.pos[1]), lerp(a.pos[2], b.pos[2])],
+    look: [lerp(a.look[0], b.look[0]), lerp(a.look[1], b.look[1]), lerp(a.look[2], b.look[2])],
+  };
+}
 
 const DUST_VERT = /* glsl */ `
   attribute float aRand;
   attribute float aSpeed;
   uniform float uTime;
+  uniform float uWarp;
   uniform vec2 uMouse;
   varying float vDepth;
   void main() {
     vec3 pos = position;
-    pos.y = mod(pos.y + uTime * aSpeed + 16.0, 32.0) - 16.0;
+    float span = 44.0;
+    pos.y = mod(pos.y + uTime * aSpeed * (1.0 + uWarp * 5.0) + span * 0.5, span) - span * 0.5;
     pos.x += sin(uTime * 0.22 + aRand * 6.2831) * 0.4;
     pos.x += uMouse.x * (0.5 + aRand * 1.1);
     pos.y += uMouse.y * (0.3 + aRand * 0.6);
     vDepth = aRand;
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = (0.6 + aRand * 1.2) * (130.0 / -mv.z);
+    // stretch vertically during warp dive for a speed sensation
+    float stretch = 1.0 + uWarp * 7.0 * aRand;
+    gl_PointSize = (0.6 + aRand * 1.2) * (130.0 / -mv.z) * mix(1.0, stretch, 0.35);
   }
 `;
 
@@ -46,7 +79,6 @@ const ORBIT_VERT = /* glsl */ `
   void main() {
     float ang = aAngle + uTime * aSpeed;
     vec3 pos = vec3(cos(ang) * aRadius, sin(ang * 0.7) * 0.9 - 1.1, sin(ang) * aRadius);
-    // tilt the whole ring
     pos = vec3(pos.x, pos.y * 0.45 - pos.z * 0.35, pos.y * 0.35 + pos.z * 0.9);
     vRand = aRand;
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
@@ -111,7 +143,59 @@ function makeGlowTexture(inner: string, mid: string): THREE.CanvasTexture {
   return new THREE.CanvasTexture(c);
 }
 
-export default function HeroScene() {
+function buildFormation(scale: number, coreColor: number) {
+  const group = new THREE.Group();
+  const lattice = new THREE.LineSegments(
+    new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(3.4 * scale, 1)),
+    new THREE.LineBasicMaterial({
+      color: 0x4da3ff,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
+  group.add(lattice);
+  const outer = new THREE.LineSegments(
+    new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(4.6 * scale, 1)),
+    new THREE.LineBasicMaterial({
+      color: 0x1c5fc4,
+      transparent: true,
+      opacity: 0.16,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    })
+  );
+  group.add(outer);
+  const coreMat = new THREE.ShaderMaterial({
+    vertexShader: CORE_VERT,
+    fragmentShader: CORE_FRAG,
+    uniforms: {
+      uTime: { value: 0 },
+      uDeep: { value: new THREE.Color(0x061a44) },
+      uMid: { value: new THREE.Color(coreColor) },
+      uLight: { value: new THREE.Color(0xbfe0ff) },
+    },
+    transparent: true,
+    depthWrite: false,
+  });
+  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45 * scale, 4), coreMat);
+  group.add(core);
+  const glowTex = makeGlowTexture("rgba(80,160,255,0.85)", "rgba(47,141,255,0.3)");
+  const glow = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: glowTex,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    })
+  );
+  glow.scale.set(9 * scale, 9 * scale, 1);
+  group.add(glow);
+  return { group, lattice, outer, core, coreMat, glow, glowTex, baseGlow: 9 * scale };
+}
+
+export default function JourneyScene() {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,65 +210,24 @@ export default function HeroScene() {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(mount.clientWidth, mount.clientHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x040b1c, 0.05);
-    const camera = new THREE.PerspectiveCamera(
-      50,
-      mount.clientWidth / mount.clientHeight,
-      0.1,
-      140
-    );
+    scene.fog = new THREE.FogExp2(0x040b1c, 0.038);
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 160);
     camera.position.set(0, 0.5, 13);
 
-    const rig = new THREE.Group();
-    scene.add(rig);
-
-    // ---- nebula backdrop ----
-    const nebulaTex = makeGlowTexture(
-      "rgba(30,90,220,0.5)",
-      "rgba(20,50,140,0.22)"
-    );
-    const nebula = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: nebulaTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      })
-    );
-    nebula.scale.set(46, 46, 1);
-    nebula.position.set(0, 1, -14);
-    scene.add(nebula);
-
-    const nebula2Tex = makeGlowTexture(
-      "rgba(90,40,200,0.28)",
-      "rgba(60,30,140,0.12)"
-    );
-    const nebula2 = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: nebula2Tex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      })
-    );
-    nebula2.scale.set(34, 34, 1);
-    nebula2.position.set(-13, -5, -10);
-    scene.add(nebula2);
-
-    // ---- ambient dust ----
+    // ---- deep particle volume (spans the whole journey) ----
     const dustGeo = new THREE.BufferGeometry();
     {
       const pos = new Float32Array(DUST_COUNT * 3);
       const rand = new Float32Array(DUST_COUNT);
       const speed = new Float32Array(DUST_COUNT);
       for (let i = 0; i < DUST_COUNT; i++) {
-        pos[i * 3] = (Math.random() * 2 - 1) * 18;
-        pos[i * 3 + 1] = (Math.random() * 2 - 1) * 16;
-        pos[i * 3 + 2] = (Math.random() * 2 - 1) * 11 - 2;
+        pos[i * 3] = (Math.random() * 2 - 1) * 20;
+        pos[i * 3 + 1] = (Math.random() * 2 - 1) * 22;
+        pos[i * 3 + 2] = 14 - Math.random() * 44; // z from +14 to -30
         rand[i] = Math.random();
         speed[i] = 0.1 + Math.random() * 0.35;
       }
@@ -197,6 +240,7 @@ export default function HeroScene() {
       fragmentShader: DUST_FRAG,
       uniforms: {
         uTime: { value: 0 },
+        uWarp: { value: 0 },
         uMouse: { value: new THREE.Vector2(0, 0) },
       },
       transparent: true,
@@ -205,64 +249,17 @@ export default function HeroScene() {
     });
     scene.add(new THREE.Points(dustGeo, dustMat));
 
-    // ---- memory lattice (wireframe icosahedron) ----
-    const latticeGeo = new THREE.WireframeGeometry(
-      new THREE.IcosahedronGeometry(3.4, 1)
-    );
-    const latticeMat = new THREE.LineBasicMaterial({
-      color: 0x4da3ff,
-      transparent: true,
-      opacity: 0.5,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const lattice = new THREE.LineSegments(latticeGeo, latticeMat);
-    rig.add(lattice);
+    // ---- formation A (hero, z=0) ----
+    const fa = buildFormation(1, 0x2f8dff);
+    fa.group.position.set(0, 0.4, 0);
+    scene.add(fa.group);
 
-    const lattice2 = new THREE.LineSegments(
-      new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(4.6, 1)),
-      new THREE.LineBasicMaterial({
-        color: 0x1c5fc4,
-        transparent: true,
-        opacity: 0.14,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
-    );
-    rig.add(lattice2);
+    // ---- formation B (finale, z=-20) ----
+    const fb = buildFormation(0.7, 0x7a5cff);
+    fb.group.position.set(0, 1, -20);
+    scene.add(fb.group);
 
-    // ---- glowing core ----
-    const coreMat = new THREE.ShaderMaterial({
-      vertexShader: CORE_VERT,
-      fragmentShader: CORE_FRAG,
-      uniforms: {
-        uTime: { value: 0 },
-        uDeep: { value: new THREE.Color(0x061a44) },
-        uMid: { value: new THREE.Color(0x2f8dff) },
-        uLight: { value: new THREE.Color(0xbfe0ff) },
-      },
-      transparent: true,
-      depthWrite: false,
-    });
-    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 4), coreMat);
-    rig.add(core);
-
-    const coreGlowTex = makeGlowTexture(
-      "rgba(80,160,255,0.85)",
-      "rgba(47,141,255,0.3)"
-    );
-    const coreGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({
-        map: coreGlowTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      })
-    );
-    coreGlow.scale.set(9, 9, 1);
-    rig.add(coreGlow);
-
-    // ---- orbiting data ring ----
+    // ---- orbit ring around formation A ----
     const orbitGeo = new THREE.BufferGeometry();
     {
       const angle = new Float32Array(ORBIT_COUNT);
@@ -290,24 +287,35 @@ export default function HeroScene() {
       blending: THREE.AdditiveBlending,
     });
     const orbit = new THREE.Points(orbitGeo, orbitMat);
-    rig.add(orbit);
+    orbit.position.set(0, 0.4, 0);
+    scene.add(orbit);
 
-    rig.position.y = 0.4;
+    // ---- nebula washes ----
+    const nebTex = makeGlowTexture("rgba(30,90,220,0.4)", "rgba(20,50,140,0.16)");
+    const neb1 = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: nebTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    neb1.scale.set(50, 50, 1);
+    neb1.position.set(0, 2, -16);
+    scene.add(neb1);
+    const neb2 = new THREE.Sprite(
+      new THREE.SpriteMaterial({ map: nebTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.7 })
+    );
+    neb2.scale.set(40, 40, 1);
+    neb2.position.set(-12, -6, -24);
+    scene.add(neb2);
 
     // ---- interaction ----
     const mouseT = new THREE.Vector2(0, 0);
     const mouseC = new THREE.Vector2(0, 0);
     const onMouse = (e: MouseEvent) => {
-      mouseT.set(
-        (e.clientX / window.innerWidth) * 2 - 1,
-        -((e.clientY / window.innerHeight) * 2 - 1)
-      );
+      mouseT.set((e.clientX / window.innerWidth) * 2 - 1, -((e.clientY / window.innerHeight) * 2 - 1));
     };
     window.addEventListener("mousemove", onMouse);
     const onResize = () => {
-      camera.aspect = mount.clientWidth / mount.clientHeight;
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(mount.clientWidth, mount.clientHeight);
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener("resize", onResize);
 
@@ -318,31 +326,39 @@ export default function HeroScene() {
       const t = clock.getElapsedTime();
       mouseC.lerp(mouseT, 0.045);
 
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const p = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+      const j = sampleJourney(p);
+      // warp factor peaks while diving through the lattice
+      const warp = Math.max(0, 1 - Math.abs(p - 0.36) / 0.14);
+
       dustMat.uniforms.uTime.value = t;
+      dustMat.uniforms.uWarp.value = reduced ? 0 : warp;
       dustMat.uniforms.uMouse.value.copy(mouseC);
       orbitMat.uniforms.uTime.value = t;
-      coreMat.uniforms.uTime.value = t;
+      fa.coreMat.uniforms.uTime.value = t;
+      fb.coreMat.uniforms.uTime.value = t;
 
       if (!reduced) {
-        lattice.rotation.y = t * 0.12;
-        lattice.rotation.x = Math.sin(t * 0.1) * 0.25;
-        lattice2.rotation.y = -t * 0.07;
-        lattice2.rotation.z = t * 0.05;
+        fa.lattice.rotation.y = t * 0.12;
+        fa.lattice.rotation.x = Math.sin(t * 0.1) * 0.25;
+        fa.outer.rotation.y = -t * 0.07;
+        fb.lattice.rotation.y = -t * 0.1;
+        fb.outer.rotation.z = t * 0.06;
         const pulse = 1 + Math.sin(t * 1.6) * 0.07;
-        core.scale.setScalar(pulse);
-        coreGlow.scale.set(9 * pulse, 9 * pulse, 1);
-        rig.rotation.y = mouseC.x * 0.18;
-        rig.rotation.x = -mouseC.y * 0.12;
-        nebula.position.x = mouseC.x * -1.5;
+        fa.core.scale.setScalar(pulse);
+        fa.glow.scale.set(fa.baseGlow * pulse, fa.baseGlow * pulse, 1);
+        fb.core.scale.setScalar(1 + Math.sin(t * 1.3 + 2) * 0.08);
+        orbit.rotation.y = Math.sin(t * 0.05) * 0.2;
       }
 
-      // scroll-driven cinematic dolly
-      const heroH = mount.clientHeight || 1;
-      const sp = Math.min(1, Math.max(0, window.scrollY / heroH));
-      camera.position.x += (mouseC.x * 1.6 - camera.position.x) * 0.05;
-      camera.position.y += (0.5 + mouseC.y * 0.8 - sp * 2.6 - camera.position.y) * 0.05;
-      camera.position.z += (13 - sp * 4 - camera.position.z) * 0.05;
-      camera.lookAt(0, 0.3 - sp * 1.4, 0);
+      // smooth-scroll camera: heavy lerp = cinematic glide
+      const k = 0.055;
+      camera.position.x += (j.pos[0] + mouseC.x * 1.4 - camera.position.x) * k;
+      camera.position.y += (j.pos[1] + mouseC.y * 0.7 - camera.position.y) * k;
+      camera.position.z += (j.pos[2] - camera.position.z) * k;
+      camera.lookAt(j.look[0] + mouseC.x * 0.6, j.look[1] + mouseC.y * 0.3, j.look[2]);
+
       renderer.render(scene, camera);
     };
     tick();
@@ -358,15 +374,13 @@ export default function HeroScene() {
         if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
         else if (mat) mat.dispose();
       });
-      nebulaTex.dispose();
-      nebula2Tex.dispose();
-      coreGlowTex.dispose();
+      nebTex.dispose();
+      fa.glowTex.dispose();
+      fb.glowTex.dispose();
       renderer.dispose();
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
-      }
+      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
     };
   }, []);
 
-  return <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />;
+  return <div ref={mountRef} className="fixed inset-0 z-0" aria-hidden="true" />;
 }
