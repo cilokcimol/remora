@@ -324,3 +324,5 @@ body {
 }
 .fcard-border:hover::before { opacity: 1; }
 @keyframes ba-spin { to { --ba: 360deg; } }
+
+.mote.big { filter: blur(3px); }

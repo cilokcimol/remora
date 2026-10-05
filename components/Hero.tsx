@@ -6,16 +6,18 @@ import ChatPanel from "@/components/ChatPanel";
 const STACK = ["Walrus", "Sui", "Z.AI", "Mistral"];
 
 /* deterministic ember particles (identical on server and client) */
-const MOTES = Array.from({ length: 24 }, (_, i) => {
+const MOTES = Array.from({ length: 26 }, (_, i) => {
   const a = Math.abs((Math.sin(i * 12.9898) * 43758.5453) % 1);
   const b = Math.abs((Math.sin(i * 78.233 + 4.7) * 12543.2) % 1);
+  const big = i % 5 === 0;
   return {
     left: `${(a * 100).toFixed(2)}%`,
     top: `${(b * 100).toFixed(2)}%`,
-    size: 2 + b * 4,
+    size: big ? 12 + b * 9 : 2.5 + b * 5,
+    big,
     dur: 9 + a * 13,
     delay: -(a * 20),
-    op: 0.25 + b * 0.5,
+    op: big ? 0.16 + b * 0.2 : 0.35 + b * 0.55,
     dx: (a - 0.5) * 130,
   };
 });
@@ -76,7 +78,7 @@ export default function Hero() {
           {MOTES.map((m, i) => (
             <span
               key={i}
-              className="mote"
+              className={`mote${m.big ? " big" : ""}`}
               style={
                 {
                   left: m.left,
