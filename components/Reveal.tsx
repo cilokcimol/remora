@@ -1,43 +1,43 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
+/** Scroll triggered 3D reveal: slight rotateX + rise, once. */
 export default function Reveal({
   children,
-  delay = 0,
   className = "",
+  delay = 0,
 }: {
   children: ReactNode;
-  delay?: number;
   className?: string;
+  delay?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.classList.add("on");
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            setTimeout(() => el.classList.add("on"), delay);
+            io.disconnect();
+          }
+        });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
     );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
+    io.observe(el);
+    return () => io.disconnect();
+  }, [delay]);
 
   return (
-    <div
-      ref={ref}
-      className={`${className} transition-all duration-[900ms] ease-out ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-      }`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <div ref={ref} className={`r3d ${className}`}>
       {children}
     </div>
   );

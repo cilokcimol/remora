@@ -6,6 +6,7 @@ const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "block",
 });
 
 const serif = Instrument_Serif({
@@ -28,6 +29,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${serif.variable} antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('anim');setTimeout(function(){document.documentElement.classList.remove('anim')},2800)}`,
+          }}
+        />
+      </head>
       <body className="min-h-screen">{children}</body>
     </html>
   );
