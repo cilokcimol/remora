@@ -17,7 +17,7 @@ Walrus Sessions 8 ("Chatbots That Remember") hackathon submission: an English-la
 - Next.js 16 (App Router), React 19, Tailwind CSS v4
 - Vercel AI SDK v7 (`ai`, `@ai-sdk/react`, `@ai-sdk/openai`)
 - Walrus Memory via `@mysten-incubation/memwal` (`withMemWal` middleware)
-- Three.js cinematic hero: particle abyss, wireframe memory lattice, scroll-driven camera
+- Cinematic nature hero: layered mouse parallax (photo, drifting fog, ember particles), 3D tilt composer card, Saturn style orb emblems on feature cards
 
 ## Run it locally
 
@@ -48,7 +48,7 @@ Never commit real values. `.env.local` is gitignored.
 - `app/api/chat/route.ts` - the streaming chat endpoint. It derives a per-visitor namespace (`remora-<userId>`, same browser keeps its memories across sessions), wraps the model with `withMemWal` (auto-save plus semantic recall of up to 5 memories at min relevance 0.3), and streams UI messages back to the client.
 - `lib/model-with-fallback.ts` - tries Z.AI first, fails over to Mistral on 429/5xx, with `maxRetries: 4` for transient free-tier errors.
 - `lib/system-prompt.ts` - the Remora persona: warm, plain-spoken, never invents facts about Walrus or Sui.
-- `components/` - `HeroScene` (Three.js hero), `ChatPanel` (glass chat UI), `Marquee`, `Backdrop`, `Reveal`.
+- `components/` - `Hero` (living nature backdrop), `ChatPanel` (glass chat UI), `Marquee`, `FeatureCards` (3D tilt + orb emblems), `MemoryDemo`, `Manifesto`, `FooterPanels`, `Reveal`.
 
 One gotcha worth knowing: AI SDK v6+ `createOpenAI()(model)` targets OpenAI's Responses API (`/v1/responses`), which Z.AI does not implement. This project forces `/chat/completions` by calling `provider.chat(model)` explicitly.
 
