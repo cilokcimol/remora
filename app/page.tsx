@@ -1,106 +1,205 @@
-import DropletScene from "@/components/DropletScene";
-import ChatPanel from "@/components/ChatPanel";
+"use client";
 
-const MEMORY_STEPS = [
+import { useEffect, useState } from "react";
+import AbyssScene from "@/components/AbyssScene";
+import ChatPanel from "@/components/ChatPanel";
+import Marquee from "@/components/Marquee";
+import Reveal from "@/components/Reveal";
+
+function useHeroFade() {
+  const [style, setStyle] = useState({});
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setStyle({
+        opacity: Math.max(0, 1 - y / 650),
+        transform: `translateY(${y * 0.28}px)`,
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return style;
+}
+
+const BENTO = [
   {
-    title: "It remembers",
-    body: "Every meaningful detail you share, your favorite fund, your questions, your decisions, is stored as an encrypted blob on Walrus, the decentralized storage network on Sui mainnet.",
+    span: "md:col-span-2",
+    kicker: "STORAGE",
+    title: "Memories live on Walrus, not on a server",
+    body: "Every fact Remora keeps is encrypted and stored as a blob on Walrus, the decentralized storage network on Sui mainnet. Verifiable, portable, owned by no company.",
   },
   {
-    title: "It recalls",
-    body: "When you return, Remora searches its memory by meaning, not keywords, and brings the right context into the conversation at the right moment.",
+    span: "",
+    kicker: "RECALL",
+    title: "Remembers by meaning",
+    body: "Semantic search pulls the right memory at the right moment. No keywords, no digging.",
   },
   {
-    title: "It continues",
-    body: "No more starting from zero. Pick up exactly where you left off, days later, from any device, with your history intact.",
+    span: "",
+    kicker: "ISOLATION",
+    title: "Your memory is yours",
+    body: "Each visitor gets a private namespace. Your funds, votes, and questions never leak into someone else's chat.",
+  },
+  {
+    span: "md:col-span-2",
+    kicker: "MODEL",
+    title: "Powered beyond the Big Two",
+    body: "Remora runs on Z.AI's GLM-4.7, not Anthropic or OpenAI. Open weights spirit, frontier quality, zero dollars burned on inference.",
+  },
+  {
+    span: "",
+    kicker: "RITUAL",
+    title: "Built for The Mutual Fun",
+    body: "Five funds. Weekly votes. 4,001 seats. Remora knows the rulebook and remembers where you left off in it.",
   },
 ];
 
 export default function Home() {
+  const heroStyle = useHeroFade();
+
   return (
-    <main className="bg-[#071224] font-sans text-white antialiased">
+    <main className="bg-[#050d1d] font-sans text-white antialiased selection:bg-[#298DFF] selection:text-white">
       {/* ============ HERO ============ */}
-      <section className="relative flex min-h-screen flex-col overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,#0e2a5c_0%,#0a1e3c_45%,#071224_100%)]" />
-        <DropletScene />
-        {/* grain */}
+      <section className="relative flex min-h-[108vh] flex-col overflow-hidden">
+        <AbyssScene />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_60%_at_50%_110%,rgba(41,141,255,0.14),transparent_70%)]" />
+
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          }}
-        />
+          style={heroStyle}
+          className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center px-6 text-center"
+        >
+          <p className="mb-6 inline-block rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.25em] text-white/70 backdrop-blur">
+            Walrus Sessions 8 · Chatbots That Remember
+          </p>
+          <h1 className="text-[19vw] font-bold leading-[0.85] tracking-[-0.05em] sm:text-[15vw] lg:text-[11rem]">
+            REMORA
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65 sm:text-xl">
+            The chatbot that{" "}
+            <span className="text-white">sticks with you</span>. It guides you
+            through The Mutual Fun, and it actually remembers you between
+            visits.
+          </p>
+          <a
+            href="#chat"
+            className="group mt-10 inline-flex items-center gap-3 rounded-full bg-[#298DFF] px-8 py-4 text-sm font-semibold tracking-wide text-white shadow-[0_0_50px_rgba(41,141,255,0.5)] transition hover:shadow-[0_0_70px_rgba(41,141,255,0.7)]"
+          >
+            START TALKING
+            <span className="transition-transform group-hover:translate-y-0.5">
+              ↓
+            </span>
+          </a>
+        </div>
 
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl flex-1 items-center gap-12 px-6 pb-20 pt-24 lg:grid-cols-[1fr_480px] lg:pt-28">
-          <div>
-            <p className="mb-5 inline-block rounded-full border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs font-medium tracking-wide text-white/70 backdrop-blur">
-              Walrus Sessions 8 · Chatbots That Remember
-            </p>
-            <h1 className="text-6xl font-semibold leading-[0.95] tracking-[-0.04em] sm:text-7xl lg:text-8xl">
-              Meet
-              <br />
-              <span className="text-[#298DFF]">Remora.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-lg leading-relaxed text-white/70">
-              The chatbot that sticks with you. Remora guides you through The
-              Mutual Fun&apos;s five funds, seats, and weekly votes, and it
-              actually remembers you between visits.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-2.5 text-xs">
-              {["Walrus Memory", "Z.AI GLM-4.7", "Sui Mainnet"].map((b) => (
-                <span
-                  key={b}
-                  className="rounded-full border border-[#298DFF]/30 bg-[#298DFF]/10 px-3.5 py-1.5 font-medium text-[#9ec7ff]"
-                >
-                  {b}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <ChatPanel />
+        <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-[11px] uppercase tracking-[0.3em] text-white/40">
+          scroll
         </div>
       </section>
 
-      {/* ============ MEMORY ============ */}
-      <section className="bg-white text-[#0a1e3c]">
-        <div className="mx-auto max-w-7xl px-6 py-24">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#298DFF]">
-            How it works
-          </p>
-          <h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">
-            Memory that sticks, not small talk that slips away.
-          </h2>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {MEMORY_STEPS.map((s, i) => (
-              <div
-                key={s.title}
-                className="rounded-3xl border border-[#0a1e3c]/10 bg-[#f7f8f8] p-8"
-              >
-                <p className="text-sm font-bold text-[#298DFF]">
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight">
-                  {s.title}
-                </h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-[#0a1e3c]/70">
-                  {s.body}
-                </p>
-              </div>
+      <Marquee />
+
+      {/* ============ CHAT ============ */}
+      <section id="chat" className="relative overflow-hidden py-28 sm:py-36">
+        <div className="pointer-events-none absolute -left-40 top-1/3 h-[480px] w-[480px] rounded-full bg-[#298DFF]/15 blur-[140px]" />
+        <div className="pointer-events-none absolute -right-40 bottom-0 h-[420px] w-[420px] rounded-full bg-[#1e5eff]/10 blur-[140px]" />
+        <div className="relative mx-auto max-w-3xl px-6">
+          <Reveal className="mb-12 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#298DFF]">
+              Live demo
+            </p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.03em] sm:text-6xl">
+              Talk to Remora.
+              <br />
+              <span className="text-white/50">It will remember this.</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={150}>
+            <ChatPanel />
+          </Reveal>
+          <Reveal delay={250}>
+            <p className="mt-6 text-center text-sm text-white/40">
+              Tell it your favorite fund, then come back tomorrow and ask what
+              it remembers.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ============ BENTO ============ */}
+      <section className="relative py-28 sm:py-36">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal className="mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#298DFF]">
+              Under the surface
+            </p>
+            <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.03em] sm:text-6xl">
+              Memory, engineered.
+            </h2>
+          </Reveal>
+          <div className="grid gap-5 md:grid-cols-3">
+            {BENTO.map((c, i) => (
+              <Reveal key={c.title} delay={(i % 3) * 120} className={c.span}>
+                <div className="group h-full rounded-3xl border border-white/10 bg-white/[0.04] p-8 backdrop-blur transition-colors duration-300 hover:border-[#298DFF]/40 hover:bg-white/[0.06]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#298DFF]">
+                    {c.kicker}
+                  </p>
+                  <h3 className="mt-4 text-2xl font-semibold tracking-tight">
+                    {c.title}
+                  </h3>
+                  <p className="mt-3 text-[15px] leading-relaxed text-white/55">
+                    {c.body}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ============ MANIFESTO ============ */}
+      <section className="relative overflow-hidden py-32 sm:py-44">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[600px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#298DFF]/10 blur-[160px]" />
+        <div className="relative mx-auto max-w-5xl px-6 text-center">
+          <Reveal>
+            <p className="mx-auto max-w-3xl text-3xl font-medium leading-snug tracking-[-0.02em] text-white/85 sm:text-5xl">
+              Most chatbots forget you the second you close the tab.{" "}
+              <span className="text-[#298DFF]">
+                Remora attaches itself to your story and does not let go.
+              </span>
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ============ FOOTER ============ */}
-      <footer className="border-t border-white/10 bg-[#071224]">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-6 py-10 text-sm text-white/50 sm:flex-row sm:items-center">
-          <p>
-            <span className="font-semibold text-white">Remora</span> · built for
-            Walrus Session 8: Chatbots That Remember
-          </p>
-          <p>Memory on Walrus · Inference by Z.AI · Beyond the Big Two</p>
+      <footer className="relative overflow-hidden border-t border-white/10">
+        <div className="mx-auto max-w-7xl px-6 pb-10 pt-20">
+          <Reveal>
+            <h2 className="text-[13vw] font-bold leading-[0.9] tracking-[-0.05em] text-white/[0.07] sm:text-[9rem]">
+              STICK WITH IT.
+            </h2>
+          </Reveal>
+          <div className="mt-10 flex flex-col justify-between gap-4 border-t border-white/10 pt-8 text-sm text-white/45 sm:flex-row sm:items-center">
+            <p>
+              <span className="font-semibold text-white">Remora</span> · Walrus
+              Session 8: Chatbots That Remember
+            </p>
+            <div className="flex gap-6">
+              <a
+                href="https://github.com/cilokcimol/remora"
+                className="transition hover:text-white"
+              >
+                GitHub
+              </a>
+              <a
+                href="https://themutual.fun"
+                className="transition hover:text-white"
+              >
+                themutual.fun
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </main>
