@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Space_Grotesk } from "next/font/google";
+import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 const serif = Instrument_Serif({
   variable: "--font-serif",
   subsets: ["latin"],
   weight: ["400"],
   style: ["normal", "italic"],
-});
-
-const grotesk = Space_Grotesk({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${serif.variable} ${grotesk.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} ${serif.variable} antialiased`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

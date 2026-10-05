@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
 
-  --color-crimson: #c8102e;
-  --color-crimson-deep: #9e0b23;
-  --color-crimson-dark: #7d0819;
-  --color-cream: #fff6ec;
-  --color-cream-dim: #f7e9d7;
-  --color-ink: #23090e;
+  --color-night: #0a0a0f;
+  --color-char: #17171c;
+  --color-char-soft: #1e1e24;
+  --color-mist: #9ca3af;
+  --color-ember: #ff8a3c;
+  --color-ember-soft: #ffb37a;
 }
 
 @keyframes marquee {
@@ -21,44 +21,34 @@
   }
 }
 
+@keyframes kenburns {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    transform: scale(1.12) translateY(-1.5%);
+  }
+}
+
 @keyframes float-slow {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-16px);
+    transform: translateY(-10px);
   }
 }
 
-@keyframes mascot-drift {
-  0%,
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 138, 60, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(255, 138, 60, 0);
+  }
   100% {
-    transform: translateY(0) rotate(-0.6deg);
-  }
-  50% {
-    transform: translateY(-18px) rotate(0.6deg);
-  }
-}
-
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92) translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes wiggle {
-  0%,
-  100% {
-    transform: rotate(-4deg);
-  }
-  50% {
-    transform: rotate(4deg);
+    box-shadow: 0 0 0 0 rgba(255, 138, 60, 0);
   }
 }
 
@@ -67,16 +57,16 @@ html {
 }
 
 body {
-  background: #c8102e;
-  color: #fff6ec;
+  background: #0a0a0f;
+  color: #f5f5f4;
 }
 
 ::selection {
-  background: #23090e;
-  color: #fff6ec;
+  background: #ff8a3c;
+  color: #0a0a0f;
 }
 
-/* slim scrollbars for the chat panel */
+/* slim scrollbars for the chat thread */
 *::-webkit-scrollbar {
   width: 6px;
 }
@@ -84,6 +74,6 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(200, 16, 46, 0.35);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
 }

@@ -1,15 +1,8 @@
 "use client";
 
-import Mascot from "@/components/Mascot";
 import ChatPanel from "@/components/ChatPanel";
 import Marquee from "@/components/Marquee";
 import Reveal from "@/components/Reveal";
-
-const PILLS = [
-  { label: "Start chatting", href: "#chat", style: "solid" },
-  { label: "How memory works", href: "#memory", style: "solid" },
-  { label: "Session 8 entry", href: "#manifesto", style: "outline" },
-] as const;
 
 const CARDS = [
   {
@@ -38,150 +31,138 @@ const CARDS = [
     body: "Walrus Sessions 8 is 'Chatbots That Remember.' Remora is the thesis in action: a chatbot whose memory outlives the tab.",
   },
   {
-    kicker: "Mascot",
+    kicker: "Presence",
     title: "Sticks with you, literally",
     body: "Like the remora fish that hitches a ride on sharks, this one attaches to your story and does not let go.",
   },
 ];
 
-function Pill({
-  label,
-  href,
-  style,
-}: {
-  label: string;
-  href: string;
-  style: "solid" | "outline";
-}) {
-  return (
-    <a
-      href={href}
-      className={
-        style === "solid"
-          ? "rounded-full bg-cream px-5 py-2.5 text-sm font-semibold text-ink shadow-[0_2px_0_rgba(35,9,14,0.9)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_5px_0_rgba(35,9,14,0.9)] active:translate-y-0 active:shadow-[0_2px_0_rgba(35,9,14,0.9)]"
-          : "rounded-full border-2 border-cream/70 px-5 py-2 text-sm font-semibold text-cream transition duration-200 hover:-translate-y-0.5 hover:border-cream hover:bg-cream/10"
-      }
-    >
-      {label}
-    </a>
-  );
-}
+const STACK = ["Walrus", "Sui", "Z.AI", "Mistral"];
 
 export default function Home() {
   return (
-    <main className="font-sans text-cream antialiased selection:bg-ink selection:text-cream">
-      {/* ============ NAV ============ */}
-      <header className="absolute inset-x-0 top-0 z-20">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-          <a href="#" className="text-xl font-bold tracking-tight">
-            Remora<span className="align-super text-xs">®</span>
-            <span className="ml-1.5 inline-block animate-[wiggle_3s_ease-in-out_infinite] text-cream">
-              ✳
-            </span>
-          </a>
-          <div className="hidden items-center gap-8 text-sm font-medium sm:flex">
-            <a href="#chat" className="transition hover:opacity-70">
-              Chat
-            </a>
-            <a href="#memory" className="transition hover:opacity-70">
-              Memory
-            </a>
-            <a href="#manifesto" className="transition hover:opacity-70">
-              Manifesto
-            </a>
-          </div>
-          <a
-            href="#chat"
-            className="text-sm font-semibold underline decoration-2 underline-offset-4 transition hover:opacity-70"
-          >
-            Get in touch
-          </a>
-        </nav>
-      </header>
-
+    <main className="font-sans text-white antialiased">
       {/* ============ HERO ============ */}
-      <section className="relative flex min-h-screen flex-col overflow-hidden bg-crimson">
-        <div className="mx-auto grid w-full max-w-7xl flex-1 items-center gap-8 px-6 pt-28 lg:grid-cols-2 lg:pt-24">
-          <div className="relative z-10 pb-10 lg:pb-0">
-            <Reveal>
-              <p className="font-serif text-5xl italic leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
-                Hey there, meet Remora,
-              </p>
-              <p className="mt-3 text-lg font-medium text-cream/85">
-                Walrus Sessions 8&rsquo;s chatbot that remembers you.
-              </p>
-            </Reveal>
-            <Reveal delay={120}>
-              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-cream/75">
-                Glad you stopped in. Good taste tends to find us. Tell me
-                something about yourself — I&rsquo;ll keep it safe on Walrus
-                and remember it the next time you visit.
-              </p>
-            </Reveal>
-            <Reveal delay={220}>
-              <div className="mt-8 flex flex-wrap gap-3">
-                {PILLS.map((p) => (
-                  <Pill key={p.label} {...p} />
-                ))}
-              </div>
-            </Reveal>
-          </div>
-          <div className="relative h-[52vh] sm:h-[60vh] lg:h-[92vh]">
-            <Mascot className="absolute inset-0 h-full w-full animate-[pop-in_1.1s_cubic-bezier(0.22,1,0.36,1)_both]" />
-          </div>
+      <section className="relative flex min-h-screen flex-col overflow-hidden">
+        {/* nature backdrop */}
+        <div className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero.jpg"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full animate-[kenburns_24s_ease-in-out_infinite_alternate] object-cover"
+            draggable={false}
+          />
         </div>
-        <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 animate-[float-slow_3s_ease-in-out_infinite] text-[11px] font-medium uppercase tracking-[0.3em] text-cream/60">
-          scroll for more
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/80 via-night/35 to-night" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(10,10,15,0.55)_100%)]" />
+
+        {/* nav */}
+        <header className="absolute inset-x-0 top-0 z-20">
+          <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+            <a href="#" className="text-[17px] font-semibold tracking-tight">
+              Remora
+            </a>
+            <div className="hidden items-center gap-8 text-sm text-white/70 sm:flex">
+              <a href="#chat" className="transition hover:text-white">
+                Chat
+              </a>
+              <a href="#memory" className="transition hover:text-white">
+                Memory
+              </a>
+              <a href="#manifesto" className="transition hover:text-white">
+                Manifesto
+              </a>
+            </div>
+            <a
+              href="#chat"
+              className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-night transition hover:bg-white/85"
+            >
+              Get started
+            </a>
+          </nav>
+        </header>
+
+        {/* hero content */}
+        <div
+          id="chat"
+          className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-6 pb-16 pt-32 text-center"
+        >
+          <Reveal>
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-1.5 text-[12px] font-medium tracking-wide text-white/75 backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-ember" />
+              Walrus Sessions 8 · Chatbots That Remember
+            </p>
+          </Reveal>
+          <Reveal delay={100}>
+            <h1 className="max-w-2xl text-4xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[52px]">
+              The chatbot that sticks with you.
+            </h1>
+          </Reveal>
+          <Reveal delay={200}>
+            <p className="mx-auto mt-4 max-w-xl text-[16px] leading-relaxed text-white/65">
+              Tell Remora something about yourself. It encrypts the memory onto
+              Walrus — and remembers you the next time you visit.
+            </p>
+          </Reveal>
+          <Reveal delay={300} className="mt-9 w-full">
+            <ChatPanel />
+          </Reveal>
+        </div>
+
+        <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 animate-[float-slow_3s_ease-in-out_infinite] text-[11px] font-medium uppercase tracking-[0.3em] text-white/40">
+          Scroll
+        </div>
+      </section>
+
+      {/* ============ PROOF STRIP ============ */}
+      <section className="border-b border-white/10 bg-night py-10">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-6 sm:flex-row sm:justify-center sm:gap-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/35">
+            Powered by
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            {STACK.map((s) => (
+              <span
+                key={s}
+                className="text-[15px] font-semibold text-white/55"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
       <Marquee />
 
-      {/* ============ CHAT ============ */}
-      <section id="chat" className="bg-cream py-24 text-ink sm:py-32">
-        <div className="mx-auto max-w-3xl px-6">
-          <Reveal className="mb-10 text-center">
-            <p className="font-serif text-5xl italic tracking-tight sm:text-6xl">
-              Talk to me.
-            </p>
-            <p className="mt-3 text-lg text-ink/60">
-              I will remember this conversation.
-            </p>
-          </Reveal>
-          <Reveal delay={140}>
-            <ChatPanel />
-          </Reveal>
-          <Reveal delay={220}>
-            <p className="mt-6 text-center text-sm text-ink/50">
-              Tell it something about yourself, then come back tomorrow and ask
-              what it remembers.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ============ MEMORY / FEATURES ============ */}
-      <section id="memory" className="bg-crimson py-24 sm:py-32">
+      <section id="memory" className="bg-night py-24 sm:py-32">
         <div className="mx-auto max-w-6xl px-6">
-          <Reveal className="mb-12">
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-cream/70">
+          <Reveal className="mb-12 max-w-2xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-ember">
               Under the hood
             </p>
-            <h2 className="mt-4 font-serif text-5xl italic tracking-tight sm:text-6xl">
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">
               Memory, engineered.
             </h2>
+            <p className="mt-4 text-[16px] leading-relaxed text-white/55">
+              Everything a chatbot needs to actually remember you — storage,
+              recall, and privacy — built on Walrus.
+            </p>
           </Reveal>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CARDS.map((c, i) => (
-              <Reveal key={c.title} delay={(i % 3) * 110}>
-                <div className="group h-full rounded-3xl bg-cream p-7 text-ink shadow-[0_3px_0_rgba(35,9,14,0.9)] transition duration-200 hover:-translate-y-1.5 hover:rotate-[-0.5deg] hover:shadow-[0_8px_0_rgba(35,9,14,0.9)]">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-crimson">
+              <Reveal key={c.title} delay={(i % 3) * 100}>
+                <div className="group h-full rounded-2xl border border-white/10 bg-char/70 p-7 backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-ember/40 hover:bg-char">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-ember">
                     {c.kicker}
                   </p>
-                  <h3 className="mt-3 font-serif text-2xl italic leading-tight">
+                  <h3 className="mt-3 text-xl font-semibold tracking-tight">
                     {c.title}
                   </h3>
-                  <p className="mt-3 text-[14px] leading-relaxed text-ink/65">
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/55">
                     {c.body}
                   </p>
                 </div>
@@ -192,59 +173,76 @@ export default function Home() {
       </section>
 
       {/* ============ MANIFESTO ============ */}
-      <section id="manifesto" className="bg-cream py-28 text-ink sm:py-36">
-        <div className="mx-auto max-w-4xl px-6 text-center">
+      <section
+        id="manifesto"
+        className="relative overflow-hidden bg-night py-28 sm:py-36"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,138,60,0.08),transparent_65%)]" />
+        <div className="relative mx-auto max-w-4xl px-6 text-center">
           <Reveal>
-            <p className="font-serif text-4xl italic leading-snug tracking-tight sm:text-6xl">
+            <p className="font-serif text-4xl italic leading-snug tracking-tight text-white/90 sm:text-6xl">
               Most chatbots forget you the second you close the tab.{" "}
-              <span className="text-crimson">
-                Remora sticks around.
-              </span>
+              <span className="text-ember-soft">Remora sticks around.</span>
             </p>
           </Reveal>
           <Reveal delay={180}>
             <a
               href="#chat"
-              className="mt-10 inline-block rounded-full bg-crimson px-8 py-3.5 text-sm font-bold text-cream shadow-[0_3px_0_rgba(35,9,14,0.9)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_7px_0_rgba(35,9,14,0.9)]"
+              className="mt-10 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-ember-soft to-ember shadow-[0_8px_24px_-6px_rgba(255,138,60,0.7)] transition hover:scale-105"
+              aria-label="Back to chat"
             >
-              Try it now ↓
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12 5v14m0 0l-6-6m6 6l6-6"
+                  stroke="white"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </a>
           </Reveal>
         </div>
       </section>
 
       {/* ============ FOOTER ============ */}
-      <footer className="bg-crimson-deep">
-        <div className="mx-auto max-w-7xl px-6 pb-10 pt-20">
+      <footer className="border-t border-white/10 bg-night">
+        <div className="mx-auto max-w-6xl px-6 pb-10 pt-16">
           <Reveal>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-cream/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/35">
               Have a memory worth keeping?
             </p>
-            <h2 className="mt-4 font-serif text-[16vw] italic leading-[0.9] tracking-tight sm:text-[9rem]">
+            <h2 className="mt-4 font-serif text-6xl italic tracking-tight sm:text-8xl">
               Stick with it.
             </h2>
           </Reveal>
-          <div className="mt-12 flex flex-col justify-between gap-4 border-t border-cream/20 pt-8 text-sm text-cream/60 sm:flex-row sm:items-center">
+          <div className="mt-12 flex flex-col justify-between gap-4 border-t border-white/10 pt-8 text-sm text-white/40 sm:flex-row sm:items-center">
             <p>
-              <span className="font-bold text-cream">Remora</span> · Walrus
+              <span className="font-semibold text-white">Remora</span> · Walrus
               Session 8: Chatbots That Remember
             </p>
-            <div className="flex gap-6 font-medium">
+            <div className="flex gap-6">
               <a
                 href="https://github.com/cilokcimol/remora"
-                className="transition hover:text-cream"
+                className="transition hover:text-white"
               >
                 GitHub
               </a>
               <a
                 href="https://www.walrus.site"
-                className="transition hover:text-cream"
+                className="transition hover:text-white"
               >
                 Walrus
               </a>
               <a
                 href="https://docs.walrus.site"
-                className="transition hover:text-cream"
+                className="transition hover:text-white"
               >
                 Docs
               </a>
