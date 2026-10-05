@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
-import { Inter_Tight } from "next/font/google";
+import { Instrument_Serif, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const interTight = Inter_Tight({
+const serif = Instrument_Serif({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+});
+
+const grotesk = Space_Grotesk({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -11,7 +18,7 @@ const interTight = Inter_Tight({
 export const metadata: Metadata = {
   title: "Remora · The chatbot that sticks with you",
   description:
-    "Remora guides you through The Mutual Fun and actually remembers you between visits, powered by Walrus Memory on Sui mainnet.",
+    "Remora is the Walrus Sessions 8 chatbot that remembers you. It stores what you tell it on Walrus and recalls it between visits.",
 };
 
 export default function RootLayout({
@@ -20,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${interTight.variable} antialiased`}>
+    <html lang="en" className={`${serif.variable} ${grotesk.variable} antialiased`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );
