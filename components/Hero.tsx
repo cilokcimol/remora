@@ -1,22 +1,97 @@
 "use client";
 
+import { useEffect, useRef, type CSSProperties } from "react";
 import ChatPanel from "@/components/ChatPanel";
 
 const STACK = ["Walrus", "Sui", "Z.AI", "Mistral"];
 
+/* deterministic ember particles (identical on server and client) */
+const MOTES = Array.from({ length: 24 }, (_, i) => {
+  const a = Math.abs((Math.sin(i * 12.9898) * 43758.5453) % 1);
+  const b = Math.abs((Math.sin(i * 78.233 + 4.7) * 12543.2) % 1);
+  return {
+    left: `${(a * 100).toFixed(2)}%`,
+    top: `${(b * 100).toFixed(2)}%`,
+    size: 2 + b * 4,
+    dur: 9 + a * 13,
+    delay: -(a * 20),
+    op: 0.25 + b * 0.5,
+    dx: (a - 0.5) * 130,
+  };
+});
+
 export default function Hero() {
+  const bgRef = useRef<HTMLDivElement>(null);
+  const fogRef = useRef<HTMLDivElement>(null);
+  const moteRef = useRef<HTMLDivElement>(null);
+
+  /* layered 3D parallax: photo deep, fog mid, embers front */
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    const t = { x: 0, y: 0 };
+    const c = { x: 0, y: 0 };
+    const onMove = (e: MouseEvent) => {
+      t.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      t.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      c.x += (t.x - c.x) * 0.055;
+      c.y += (t.y - c.y) * 0.055;
+      if (bgRef.current)
+        bgRef.current.style.transform = `translate3d(${(c.x * -14).toFixed(1)}px, ${(c.y * -10).toFixed(1)}px, 0)`;
+      if (fogRef.current)
+        fogRef.current.style.transform = `translate3d(${(c.x * -30).toFixed(1)}px, ${(c.y * -20).toFixed(1)}px, 0)`;
+      if (moteRef.current)
+        moteRef.current.style.transform = `translate3d(${(c.x * -56).toFixed(1)}px, ${(c.y * -38).toFixed(1)}px, 0)`;
+    };
+    window.addEventListener("mousemove", onMove);
+    loop();
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <section id="chat" className="relative flex min-h-screen flex-col overflow-hidden">
-      {/* backdrop */}
-      <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero.jpg"
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-          className="h-full w-full animate-[kenburns_26s_ease-in-out_infinite_alternate] object-cover"
-        />
+      {/* living backdrop: photo + drifting fog + embers */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div ref={bgRef} className="absolute -inset-[6%] will-change-transform">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero.jpg"
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="h-full w-full animate-[kenburns_20s_ease-in-out_infinite_alternate] object-cover"
+          />
+        </div>
+        <div ref={fogRef} className="pointer-events-none absolute -inset-[10%] will-change-transform">
+          <div className="fog-a" />
+          <div className="fog-b" />
+        </div>
+        <div ref={moteRef} className="pointer-events-none absolute inset-0 will-change-transform" aria-hidden="true">
+          {MOTES.map((m, i) => (
+            <span
+              key={i}
+              className="mote"
+              style={
+                {
+                  left: m.left,
+                  top: m.top,
+                  width: m.size,
+                  height: m.size,
+                  "--d": `${m.dur.toFixed(1)}s`,
+                  "--dl": `${m.delay.toFixed(1)}s`,
+                  "--o": m.op.toFixed(2),
+                  "--dx": `${m.dx.toFixed(0)}px`,
+                } as CSSProperties
+              }
+            />
+          ))}
+        </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#0a0d12]/85 via-[#0a0d12]/30 to-[#0a0d12]" />
 

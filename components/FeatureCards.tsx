@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import Reveal from "@/components/Reveal";
 
 const CARDS = [
@@ -36,7 +36,7 @@ const CARDS = [
   },
 ];
 
-function TiltCard({ card }: { card: (typeof CARDS)[number] }) {
+function TiltCard({ card, accent }: { card: (typeof CARDS)[number]; accent: { a: string; b: string } }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (e: React.MouseEvent) => {
@@ -45,11 +45,14 @@ function TiltCard({ card }: { card: (typeof CARDS)[number] }) {
     const r = el.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width - 0.5) * 2;
     const y = ((e.clientY - r.top) / r.height - 0.5) * 2;
+    el.style.transition = "transform .12s ease-out";
     el.style.transform = `perspective(900px) rotateY(${(x * 7).toFixed(2)}deg) rotateX(${(-y * 7).toFixed(2)}deg) translateY(-6px)`;
   };
   const onLeave = () => {
     const el = ref.current;
-    if (el) el.style.transform = "";
+    if (!el) return;
+    el.style.transition = "transform .6s cubic-bezier(.22,1,.36,1)";
+    el.style.transform = "";
   };
 
   return (
@@ -57,10 +60,24 @@ function TiltCard({ card }: { card: (typeof CARDS)[number] }) {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={onLeave}
-      className="group relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#131318]/80 p-7 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-[#ff8a3c]/40 hover:shadow-[0_20px_60px_-15px_rgba(255,138,60,0.35)]"
+      className="fcard-border group relative h-full overflow-hidden rounded-2xl border border-white/10 bg-[#131318]/80 p-7 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-[#ff8a3c]/40 hover:shadow-[0_20px_60px_-15px_rgba(255,138,60,0.35)]"
       style={{ transitionProperty: "border-color, box-shadow" }}
     >
       <span className="pointer-events-none absolute inset-y-0 w-1/3 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/[0.07] to-transparent transition-transform duration-700 group-hover:translate-x-[350%]" />
+      <div className="orb-wrap" aria-hidden="true">
+        <div className="orb-glow" style={{ background: `radial-gradient(closest-side, ${accent.b}66, transparent)` }} />
+        <div
+          className="orb"
+          style={
+            {
+              background: `radial-gradient(circle at 32% 28%, ${accent.a}, ${accent.b} 62%, #0b0d12 135%)`,
+              "--oglow": `${accent.b}59`,
+            } as CSSProperties
+          }
+        />
+        <div className="orb-ring" />
+        <div className="orb-ring r2" />
+      </div>
       <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#ff8a3c]">
         {card.kicker}
       </p>
@@ -71,6 +88,15 @@ function TiltCard({ card }: { card: (typeof CARDS)[number] }) {
     </div>
   );
 }
+
+const ACCENTS = [
+  { a: "#F8B47E", b: "#E88654" },
+  { a: "#8FE8D4", b: "#2E9E8B" },
+  { a: "#C9AFF7", b: "#7C5CD6" },
+  { a: "#F7DA8A", b: "#D6A03C" },
+  { a: "#93C9F7", b: "#3C7ED6" },
+  { a: "#F7A9C4", b: "#D65C8A" },
+];
 
 export default function FeatureCards() {
   return (
@@ -91,7 +117,9 @@ export default function FeatureCards() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CARDS.map((c, i) => (
             <Reveal key={c.title} delay={(i % 3) * 100}>
-              <TiltCard card={c} />
+              <div className="fcard-float h-full" style={{ animationDelay: `${((i % 3) * 1.4 - 2).toFixed(1)}s` }}>
+                <TiltCard card={c} accent={ACCENTS[i % ACCENTS.length]} />
+              </div>
             </Reveal>
           ))}
         </div>
