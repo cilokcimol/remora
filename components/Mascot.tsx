@@ -46,7 +46,7 @@ export default function Mascot({ className = "" }: { className?: string }) {
         <div className="h-full w-full animate-[mascot-drift_7s_ease-in-out_infinite]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/mascot.png"
+            src="/mascot.jpg"
             alt="Remora, the friendly 3D fish mascot"
             className="h-full w-full object-cover object-top"
             draggable={false}

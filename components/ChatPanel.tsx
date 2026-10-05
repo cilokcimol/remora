@@ -51,7 +51,7 @@ function ChatInner({ userId }: { userId: string }) {
       <div className="flex items-center gap-3 border-b-2 border-ink/10 bg-cream px-5 py-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/mascot.png"
+          src="/mascot.jpg"
           alt="Remora mascot"
           className="h-11 w-11 rounded-2xl border-2 border-ink/10 object-cover object-top"
         />
