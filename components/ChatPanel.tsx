@@ -14,9 +14,9 @@ function getUserId(): string {
 }
 
 const SUGGESTIONS = [
-  "What are the five funds?",
-  "How do I get a seat?",
-  "Do you remember me?",
+  "What is Walrus Memory?",
+  "How does your memory work?",
+  "What do you remember about me?",
 ];
 
 function ChatInner({ userId }: { userId: string }) {
@@ -69,10 +69,11 @@ function ChatInner({ userId }: { userId: string }) {
           <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
             <p className="text-sm leading-relaxed text-white/85">
               Hey, I&apos;m{" "}
-              <span className="font-semibold text-white">Remora</span>. I guide
-              people through The Mutual Fun, and I actually remember you
-              between visits. Ask me about the five funds, seats, voting, or
-              anything else.
+              <span className="font-semibold text-white">Remora</span>. Like
+              the remora fish, I stick with you: everything meaningful you
+              tell me is stored on Walrus, and I remember you between
+              visits. Ask me about Walrus Memory, or tell me something
+              about yourself.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {SUGGESTIONS.map((s) => (
