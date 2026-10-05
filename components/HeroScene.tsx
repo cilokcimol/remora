@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const DUST_COUNT = 7000;
-const ORBIT_COUNT = 900;
+const DUST_COUNT = 4000;
+const ORBIT_COUNT = 500;
 
 const DUST_VERT = /* glsl */ `
   attribute float aRand;
@@ -45,13 +45,13 @@ const ORBIT_VERT = /* glsl */ `
   varying float vRand;
   void main() {
     float ang = aAngle + uTime * aSpeed;
-    vec3 pos = vec3(cos(ang) * aRadius, sin(ang * 0.7) * 0.9, sin(ang) * aRadius);
+    vec3 pos = vec3(cos(ang) * aRadius, sin(ang * 0.7) * 0.9 - 1.1, sin(ang) * aRadius);
     // tilt the whole ring
     pos = vec3(pos.x, pos.y * 0.45 - pos.z * 0.35, pos.y * 0.35 + pos.z * 0.9);
     vRand = aRand;
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = (1.4 + aRand * 2.6) * (140.0 / -mv.z);
+    gl_PointSize = (0.5 + aRand * 1.1) * (140.0 / -mv.z);
   }
 `;
 
@@ -62,7 +62,7 @@ const ORBIT_FRAG = /* glsl */ `
     if (length(uv) > 0.5) discard;
     float soft = smoothstep(0.5, 0.05, length(uv));
     vec3 col = mix(vec3(0.16, 0.55, 1.0), vec3(0.75, 0.9, 1.0), vRand);
-    gl_FragColor = vec4(col, soft * 0.9);
+    gl_FragColor = vec4(col, soft * 0.55);
   }
 `;
 
@@ -210,9 +210,9 @@ export default function HeroScene() {
       new THREE.IcosahedronGeometry(3.4, 1)
     );
     const latticeMat = new THREE.LineBasicMaterial({
-      color: 0x2f8dff,
+      color: 0x4da3ff,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.5,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -244,7 +244,7 @@ export default function HeroScene() {
       transparent: true,
       depthWrite: false,
     });
-    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.15, 4), coreMat);
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.45, 4), coreMat);
     rig.add(core);
 
     const coreGlowTex = makeGlowTexture(
@@ -259,7 +259,7 @@ export default function HeroScene() {
         blending: THREE.AdditiveBlending,
       })
     );
-    coreGlow.scale.set(7.5, 7.5, 1);
+    coreGlow.scale.set(9, 9, 1);
     rig.add(coreGlow);
 
     // ---- orbiting data ring ----
@@ -271,7 +271,7 @@ export default function HeroScene() {
       const rand = new Float32Array(ORBIT_COUNT);
       for (let i = 0; i < ORBIT_COUNT; i++) {
         angle[i] = Math.random() * Math.PI * 2;
-        radius[i] = 5.2 + Math.random() * 2.2;
+        radius[i] = 6.8 + Math.random() * 1.1;
         speed[i] = (0.08 + Math.random() * 0.22) * (Math.random() > 0.5 ? 1 : -1);
         rand[i] = Math.random();
       }
@@ -330,7 +330,7 @@ export default function HeroScene() {
         lattice2.rotation.z = t * 0.05;
         const pulse = 1 + Math.sin(t * 1.6) * 0.07;
         core.scale.setScalar(pulse);
-        coreGlow.scale.set(7.5 * pulse, 7.5 * pulse, 1);
+        coreGlow.scale.set(9 * pulse, 9 * pulse, 1);
         rig.rotation.y = mouseC.x * 0.18;
         rig.rotation.x = -mouseC.y * 0.12;
         nebula.position.x = mouseC.x * -1.5;
