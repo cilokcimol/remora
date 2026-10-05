@@ -78,7 +78,7 @@
 .anim .e-chips > *:nth-child(1) { animation-delay: 0.94s; }
 .anim .e-chips > *:nth-child(2) { animation-delay: 0.99s; }
 .anim .e-chips > *:nth-child(3) { animation-delay: 1.04s; }
-.anim .e-right > * { animation: e-populate 0.5s var(--e-soft) 1s both; }
+.anim .e-right { animation: e-populate 0.5s var(--e-soft) 1s both; }
 .anim .e-send { animation: e-send 0.5s var(--e-primary) 1s both; }
 .anim .e-proof { animation: e-settle-up 0.55s var(--e-soft) 1.08s both; }
 .anim .e-logo { animation: e-settle-up 0.55s var(--e-soft) both; }

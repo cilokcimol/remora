@@ -163,7 +163,7 @@ function ChatInner({ userId }: { userId: string }) {
       )}
 
       {/* input band */}
-      <div className="px-7 pt-4">
+      <div className="px-7 pb-6 pt-4">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -178,70 +178,55 @@ function ChatInner({ userId }: { userId: string }) {
           aria-label="Message Remora"
           className="w-full resize-none bg-transparent text-[16px] leading-relaxed text-white placeholder:text-[#8B8C8E] outline-none"
         />
-      </div>
 
-      {/* toolbar: chips left, right cluster absolute on desktop */}
-      <div className="tools relative mx-7 mb-[18px] mt-3 flex h-[30px] items-center gap-2 max-lg:h-auto max-lg:flex-wrap lg:pr-[248px]">
-        <div className="e-chips flex items-center gap-[6px]">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => submit(s)}
-              className="h-[30px] whitespace-nowrap rounded-[9px] border border-white/[0.05] px-3 text-[11.5px] font-medium leading-none text-[#909093] transition hover:text-[#c8c8cb]"
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,.088) 0%, rgba(255,255,255,.050) 45%, rgba(255,255,255,.038) 100%)",
-              }}
-            >
-              <span className="inline-block" style={{ transform: "translateY(2px)" }}>{s}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="e-right right pointer-events-none absolute inset-0 max-lg:static max-lg:ml-auto max-lg:flex max-lg:items-center">
-          <span
-            className="pointer-events-auto absolute inline-flex items-center gap-[6px] text-[12.5px] font-normal leading-none text-[#98999C] max-lg:static"
-            style={{ right: 118, top: 15 }}
-          >
-            Walrus Memory <Chevron />
-          </span>
-          <span
-            className="pointer-events-auto absolute cursor-pointer text-[#A9AAAD] transition hover:text-white max-lg:static max-lg:ml-4"
-            style={{ right: 62, top: 9 }}
-            title="Attach"
-          >
-            <Paperclip />
-          </span>
-          <span className="e-send pointer-events-auto absolute max-lg:static max-lg:ml-4" style={{ right: 0, top: 0 }}>
-            <span className="send-ring block rounded-full p-[2px]">
+        {/* toolbar: chips left, model + attach + send right */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-3">
+          <div className="e-chips flex flex-wrap items-center gap-[6px]">
+            {SUGGESTIONS.map((s) => (
               <button
-                type="submit"
-                disabled={busy || !input.trim()}
-                aria-label="Send it"
-                className="flex h-[34px] w-[34px] items-center justify-center rounded-full transition hover:brightness-110 active:scale-95 disabled:opacity-50"
+                key={s}
+                type="button"
+                onClick={() => submit(s)}
+                className="h-[30px] whitespace-nowrap rounded-[9px] border border-white/[0.05] px-3 text-[11.5px] font-medium leading-none text-[#909093] transition hover:text-[#c8c8cb]"
                 style={{
-                  background: "linear-gradient(163deg, #FBBC94 0%, #F49D70 46%, #E88654 100%)",
-                  boxShadow: "0 3px 12px rgba(210,110,60,.34)",
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,.088) 0%, rgba(255,255,255,.050) 45%, rgba(255,255,255,.038) 100%)",
                 }}
               >
-                <UpArrow />
+                <span className="inline-block" style={{ transform: "translateY(1px)" }}>{s}</span>
               </button>
+            ))}
+          </div>
+
+          <div className="e-right ml-auto flex items-center">
+            <span className="inline-flex items-center gap-[6px] text-[12.5px] font-normal leading-none text-[#98999C]">
+              Walrus Memory <Chevron />
             </span>
-          </span>
+            <span
+              className="ml-4 cursor-pointer text-[#A9AAAD] transition hover:text-white"
+              title="Attach"
+            >
+              <Paperclip />
+            </span>
+            <span className="e-send ml-4 translate-y-[3px]">
+              <span className="send-ring block rounded-full p-[2px]">
+                <button
+                  type="submit"
+                  disabled={busy || !input.trim()}
+                  aria-label="Send it"
+                  className="flex h-[34px] w-[34px] items-center justify-center rounded-full transition hover:brightness-110 active:scale-95 disabled:opacity-50"
+                  style={{
+                    background: "linear-gradient(163deg, #FBBC94 0%, #F49D70 46%, #E88654 100%)",
+                    boxShadow: "0 3px 12px rgba(210,110,60,.34)",
+                  }}
+                >
+                  <UpArrow />
+                </button>
+              </span>
+            </span>
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @media (max-width: 1023px) {
-          .tools { align-items: center; }
-        }
-        @media (max-width: 599px) {
-          .tools { flex-direction: column; align-items: stretch; gap: 12px; }
-          .right { justify-content: flex-start; width: 100%; }
-          .right > span:first-child { margin-right: auto; }
-        }
-      `}</style>
     </form>
   );
 }
