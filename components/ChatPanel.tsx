@@ -15,8 +15,8 @@ function getUserId(): string {
 
 const SUGGESTIONS = [
   "What is Walrus Memory?",
-  "How does it remember?",
-  "What do you remember about me?",
+  "How it remembers",
+  "My memories",
 ];
 
 function Chevron() {
@@ -181,7 +181,7 @@ function ChatInner({ userId }: { userId: string }) {
       </div>
 
       {/* toolbar: chips left, right cluster absolute on desktop */}
-      <div className="tools relative mx-7 mb-[18px] mt-3 flex h-[30px] items-center gap-2 max-lg:h-auto max-lg:flex-wrap">
+      <div className="tools relative mx-7 mb-[18px] mt-3 flex h-[30px] items-center gap-2 max-lg:h-auto max-lg:flex-wrap lg:pr-[248px]">
         <div className="e-chips flex items-center gap-[6px]">
           {SUGGESTIONS.map((s) => (
             <button
