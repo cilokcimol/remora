@@ -3,6 +3,12 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  decryptSecret,
+  encryptSecret,
+  isValidLabel,
+  type SecretPayload,
+} from "@/lib/secrets";
 
 function getUserId(): string {
   let id = window.localStorage.getItem("remora-user-id");
@@ -67,6 +73,30 @@ function ChatInner({ userId }: { userId: string }) {
   const busy = status === "submitted" || status === "streaming";
   const hasMessages = messages.length > 0;
 
+  // Local notices for vault actions (never part of the chat thread).
+  const [notices, setNotices] = useState<
+    { id: number; title: string; body: string }[]
+  >([]);
+  const noticeId = useRef(0);
+  const pushNotice = (title: string, body: string) =>
+    setNotices((ns) => {
+      const id = ++noticeId.current;
+      return [...ns.slice(-2), { id, title, body }];
+    });
+  const dismissNotice = (id: number) =>
+    setNotices((ns) => ns.filter((n) => n.id !== id));
+
+  // Vault password lives only in page memory, never sent anywhere.
+  const vaultPassword = useRef<string | null>(null);
+  const [pwInput, setPwInput] = useState("");
+  const [pendingVault, setPendingVault] = useState<
+    | { kind: "store"; label: string; secret: string }
+    | { kind: "open"; label: string }
+    | null
+  >(null);
+  // Encrypted payloads cached this session (ciphertext only, never plaintext).
+  const secretsCache = useRef<Map<string, SecretPayload>>(new Map());
+
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -98,9 +128,118 @@ function ChatInner({ userId }: { userId: string }) {
     };
   }, []);
 
+  const runVaultAction = async (
+    password: string,
+    action: { kind: "store"; label: string; secret: string } | { kind: "open"; label: string }
+  ) => {
+    if (action.kind === "store") {
+      try {
+        const payload = await encryptSecret(password, action.label, action.secret);
+        secretsCache.current.set(payload.label, payload);
+        const res = await fetch("/api/secrets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, ...payload }),
+        });
+        if (!res.ok) throw new Error("The server could not store it.");
+        pushNotice(
+          "Secret stored",
+          `Label "${action.label}" was encrypted on this device before upload. ` +
+            "Nobody else can read it, not even the chatbot operator. " +
+            `Use /reveal ${action.label} to read it back.`
+        );
+      } catch {
+        pushNotice("Storage failed", "The secret could not be stored. Please try again.");
+      }
+      return;
+    }
+    try {
+      let payload = secretsCache.current.get(action.label);
+      if (!payload) {
+        const res = await fetch(`/api/secrets?userId=${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        payload = (data.secrets ?? []).find(
+          (s: SecretPayload) => s.label === action.label
+        );
+        if (payload) secretsCache.current.set(payload.label, payload);
+      }
+      if (!payload) {
+        pushNotice("Not found", `No secret stored under label "${action.label}".`);
+        return;
+      }
+      const plaintext = await decryptSecret(password, payload);
+      pushNotice("Decrypted locally", plaintext);
+    } catch {
+      vaultPassword.current = null;
+      pushNotice(
+        "Wrong password",
+        "That password could not decrypt the secret. It was cleared; try again."
+      );
+    }
+  };
+
+  const requireVaultPassword = (
+    action: { kind: "store"; label: string; secret: string } | { kind: "open"; label: string }
+  ) => {
+    if (vaultPassword.current) {
+      void runVaultAction(vaultPassword.current, action);
+    } else {
+      setPendingVault(action);
+    }
+  };
+
+  const submitVaultPassword = () => {
+    const pw = pwInput;
+    if (!pw || !pendingVault) return;
+    vaultPassword.current = pw;
+    const action = pendingVault;
+    setPendingVault(null);
+    setPwInput("");
+    void runVaultAction(pw, action);
+  };
+
+  const handleIncognito = (value: string) => {
+    const rest = value.replace(/^\/incognito\s*/, "");
+    const space = rest.indexOf(" ");
+    const label = space === -1 ? rest : rest.slice(0, space);
+    const secret = space === -1 ? "" : rest.slice(space + 1).trim();
+    if (!isValidLabel(label) || !secret) {
+      pushNotice(
+        "How to use /incognito",
+        "Type /incognito followed by a label and your secret, for example: " +
+          "/incognito diary I am secretly learning the piano. " +
+          "Labels may use letters, numbers, and dashes, up to 40 characters."
+      );
+      return;
+    }
+    requireVaultPassword({ kind: "store", label, secret });
+  };
+
+  const handleReveal = (value: string) => {
+    const label = value.replace(/^\/reveal\s*/, "").trim();
+    if (!isValidLabel(label)) {
+      pushNotice(
+        "How to use /reveal",
+        "Type /reveal followed by the label, for example: /reveal diary."
+      );
+      return;
+    }
+    requireVaultPassword({ kind: "open", label });
+  };
+
   const submit = (text: string) => {
     const value = text.trim();
     if (!value || busy) return;
+    if (value.startsWith("/incognito")) {
+      handleIncognito(value);
+      setInput("");
+      return;
+    }
+    if (value.startsWith("/reveal")) {
+      handleReveal(value);
+      setInput("");
+      return;
+    }
     sendMessage({ text: value });
     setInput("");
   };
@@ -163,8 +302,87 @@ function ChatInner({ userId }: { userId: string }) {
         <p className="e-welcome px-7 pt-7 text-[15px] leading-relaxed text-white/75">
           Hey, I am <span className="font-semibold text-white">Remora</span>. Tell me
           something about yourself. I keep it safe on Walrus and remember it when
-          you return.
+          you return. Try <span className="font-mono text-white/90">/help</span> to
+          see what else I can do.
         </p>
+      )}
+
+      {/* local notices: vault confirmations, usage hints, decrypted secrets */}
+      {notices.length > 0 && (
+        <div className="space-y-2 px-7 pt-4">
+          {notices.map((n) => (
+            <div
+              key={n.id}
+              className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[13px] font-semibold text-white">{n.title}</p>
+                <button
+                  type="button"
+                  onClick={() => dismissNotice(n.id)}
+                  aria-label="Dismiss"
+                  className="text-white/40 transition hover:text-white"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+              <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-white/70">
+                {n.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* vault password gate: the password never leaves this page */}
+      {pendingVault && (
+        <div className="px-7 pt-4">
+          <div className="rounded-xl border border-[#F49D70]/40 bg-[#F49D70]/10 px-4 py-3">
+            <p className="text-[13px] font-semibold text-white">Vault password</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-white/70">
+              {pendingVault.kind === "store"
+                ? `Set a password to encrypt "${pendingVault.label}". It stays on this device and is never sent anywhere. If you forget it, the secret cannot be recovered.`
+                : `Enter the password for "${pendingVault.label}" to decrypt it locally.`}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="password"
+                value={pwInput}
+                onChange={(e) => setPwInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    submitVaultPassword();
+                  }
+                }}
+                placeholder="Vault password"
+                aria-label="Vault password"
+                autoFocus
+                className="h-9 flex-1 rounded-lg border border-white/15 bg-black/30 px-3 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-[#F49D70]/60"
+              />
+              <button
+                type="button"
+                onClick={submitVaultPassword}
+                disabled={!pwInput}
+                className="h-9 rounded-lg bg-[#F49D70] px-4 text-[13px] font-semibold text-black transition hover:brightness-110 disabled:opacity-40"
+              >
+                Unlock
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPendingVault(null);
+                  setPwInput("");
+                }}
+                className="h-9 rounded-lg border border-white/15 px-4 text-[13px] text-white/70 transition hover:text-white"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* input band */}

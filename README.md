@@ -14,6 +14,30 @@ Walrus Sessions 8 ("Chatbots That Remember") hackathon submission: an English la
 - **Memory on/off comparison.** A toggle in the chat switches Walrus Memory off, so anyone can run the before and after test themselves: same question, generic answer without memory, personal answer with it.
 - **Beyond the Big Two.** Inference runs on open weights models only: KelontongAI GLM (`glm-5.2`) as primary, with automatic failover to Z.AI (`glm-4.7-flash`) then Mistral (`mistral-small-latest`) when a provider saturates.
 
+## Slash commands
+
+- `/help` lists every command.
+- `/timetravel <what if scenario>` simulates an alternate present from a past decision, grounded in your stored history.
+- `/mentor <name>` advises you in the voice of a famous figure who knows your actual life details.
+- `/insight` surfaces hidden patterns across your memories: recurring stress sources, repeated themes, gaps between goals and behavior.
+- `/blindspot` resurfaces forgotten ideas, promises, and commitments with dates and your own words.
+- `/mybook` drafts chapters of your life story from your memories.
+- `/testme` quizzes you on one concrete fact from your memories.
+- `/share <tip>` strips identifying details with a dedicated model pass and adds the tip to the opt in community pool.
+- `/wisdom <question>` answers from the anonymized community tip pool.
+- `/incognito <label> <secret>` encrypts the secret in your browser (AES-GCM, key derived from your password) before upload. The server only sees ciphertext.
+- `/reveal <label>` decrypts a stored secret locally. The password never leaves your device.
+
+The persona also adapts its tone to how you write and will gently challenge you when your current message contradicts a principle you stated in a recalled memory, quoting your own past words.
+
+## Privacy model
+
+- Every visitor gets a private memory namespace derived from a random browser id (`remora-<uuid>`). Recall and save are always scoped to that namespace, so one visitor's memories can never surface in another visitor's chat.
+- `/api/memories` and `/api/secrets` only serve the requesting visitor's namespace. The ids are unguessable 128 bit UUIDs.
+- `/incognito` secrets get a second layer: AES-GCM encryption in the browser with a password derived key, on top of Walrus Memory's own encryption. Plaintext never leaves the device.
+- The community pool behind `/share` and `/wisdom` is strictly opt in and lives in a separate namespace. A dedicated model pass removes names, places, companies, dates, and numbers before anything is stored there. Private namespaces are never read for community answers.
+- Honest limits: there is no login system, so the browser id in local storage is the identity. Anyone with access to that browser can open its vault. Treat the vault password as the real boundary for secrets.
+
 ## Stack
 
 - Next.js 16 (App Router), React 19, Tailwind CSS v4
