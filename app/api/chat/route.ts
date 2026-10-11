@@ -2,6 +2,7 @@ import {
   convertToModelMessages,
   generateText,
   streamText,
+  type ModelMessage,
   type UIMessage,
 } from "ai";
 import { withMemWal } from "@mysten-incubation/memwal/ai";
@@ -34,6 +35,93 @@ interface ChatRequest {
    * Defaults to true.
    */
   memoryEnabled?: boolean;
+}
+
+/**
+ * Commands whose answers must be grounded in the visitor's full history.
+ * For these, memories are injected directly via a broad recall instead of
+ * relying on the middleware's relevance filter, which drops memories for
+ * broad analytical queries.
+ */
+const MEMORY_GROUNDED_COMMANDS = new Set([
+  "insight",
+  "blindspot",
+  "mybook",
+  "testme",
+  "timetravel",
+  "mentor",
+]);
+
+const HELP_TEXT = `Available commands:
+
+/timetravel <scenario> Simulate an alternate present from a past decision, grounded in your history.
+/mentor <name> Get advice in the voice of a famous figure who knows your life details.
+/insight Surface hidden patterns across your memories.
+/blindspot Resurface forgotten ideas and promises, with dates.
+/mybook Draft chapters of your life story from your memories.
+/testme Quiz yourself on one fact from your memories.
+/share <tip> Share a tip anonymously to the community pool.
+/wisdom <question> Get answers from the community tip pool.
+/incognito <label> <secret> Store a secret with full browser side encryption.
+/reveal <label> Decrypt a stored secret locally.`;
+
+/**
+ * Deterministic /help: no model call, the list is always complete
+ * and instant. Emits a minimal UIMessage SSE stream.
+ */
+function helpResponse(): Response {
+  const esc = (s: string) => s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+  const chunks: string[] = [];
+  for (let i = 0; i < HELP_TEXT.length; i += 120) {
+    chunks.push(HELP_TEXT.slice(i, i + 120));
+  }
+  const lines = [
+    `data: {"type":"start"}`,
+    ``,
+    `data: {"type":"start-step"}`,
+    ``,
+    `data: {"type":"text-start","id":"0"}`,
+    ``,
+    ...chunks.flatMap((c) => [
+      `data: {"type":"text-delta","id":"0","delta":"${esc(c)}"}`,
+      ``,
+    ]),
+    `data: {"type":"text-end","id":"0"}`,
+    ``,
+    `data: {"type":"finish-step"}`,
+    ``,
+    `data: {"type":"finish","finishReason":"stop"}`,
+    ``,
+    `data: [DONE]`,
+    ``,
+  ];
+  return new Response(lines.join("\n"), {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
+/**
+ * Some OpenAI compatible providers ignore the system role, which would
+ * silently drop the Remora persona. The persona is therefore sent as
+ * the first user message instead of the system parameter, so behavior
+ * is identical on every provider.
+ */
+function withPersonaLead(
+  systemText: string,
+  messages: ModelMessage[]
+): ModelMessage[] {
+  return [
+    {
+      role: "user",
+      content:
+        "Follow these instructions for our entire conversation:\n\n" +
+        systemText,
+    },
+    ...messages,
+  ];
 }
 
 /** Plain text of the latest user message. */
@@ -83,25 +171,65 @@ async function handleShare(
   if (!cmd.arg) {
     return streamText({
       model: baseModel,
-      system: SYSTEM_PROMPT,
-      prompt:
-        "The user typed /share with no tip. Briefly explain the format: /share followed by the tip they want to share anonymously.",
+      messages: withPersonaLead(SYSTEM_PROMPT, [
+        {
+          role: "user",
+          content:
+            "The user typed /share with no tip. Briefly explain the format: /share followed by the tip they want to share anonymously.",
+        },
+      ]),
       maxOutputTokens: 200,
       maxRetries: 1,
     }).toUIMessageStreamResponse(streamErrorOptions);
   }
 
-  const { text } = await generateText({
-    model: baseModel,
-    system: SHARE_ANONYMIZER_PROMPT,
-    prompt: cmd.arg,
-    maxOutputTokens: 400,
-    maxRetries: 1,
-  });
-  const cleanTip = text.trim();
+  let cleanTip: string;
+  try {
+    const { text } = await generateText({
+      model: baseModel,
+      // Instruction goes in the user message: some providers ignore system.
+      prompt: `${SHARE_ANONYMIZER_PROMPT}\n\nMessage to anonymize:\n${cmd.arg}`,
+      maxOutputTokens: 400,
+      maxRetries: 1,
+    });
+    cleanTip = text.trim();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return streamText({
+      model: baseModel,
+      messages: withPersonaLead(SYSTEM_PROMPT, [
+        {
+          role: "user",
+          content:
+            `The /share anonymizer failed with this error: ${detail.slice(0, 200)}. ` +
+            `Tell the user the share failed and to try again in a moment.`,
+        },
+      ]),
+      maxOutputTokens: 200,
+      maxRetries: 1,
+    }).toUIMessageStreamResponse(streamErrorOptions);
+  }
+  const tipToStore = cleanTip;
 
-  if (cleanTip) {
-    await rememberAndWait(cleanTip, SHARED_TIPS_NAMESPACE);
+  try {
+    if (tipToStore) {
+      await rememberAndWait(tipToStore, SHARED_TIPS_NAMESPACE);
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    return streamText({
+      model: baseModel,
+      messages: withPersonaLead(SYSTEM_PROMPT, [
+        {
+          role: "user",
+          content:
+            `Storing the shared tip failed with this error: ${detail.slice(0, 200)}. ` +
+            `Tell the user the share failed and to try again in a moment.`,
+        },
+      ]),
+      maxOutputTokens: 200,
+      maxRetries: 1,
+    }).toUIMessageStreamResponse(streamErrorOptions);
   }
 
   const namespace = namespaceFor(userId);
@@ -111,12 +239,16 @@ async function handleShare(
 
   return streamText({
     model,
-    system: SYSTEM_PROMPT,
-    prompt:
-      `The user just shared an anonymous tip to the community pool. ` +
-      `The anonymized version stored was: "${cleanTip}". ` +
-      `Confirm briefly that it was shared anonymously, show the cleaned ` +
-      `version, and note that anyone can query it with /wisdom.`,
+    messages: withPersonaLead(SYSTEM_PROMPT, [
+      {
+        role: "user",
+        content:
+          `The user just shared an anonymous tip to the community pool. ` +
+          `The anonymized version stored was: "${tipToStore}". ` +
+          `Confirm briefly that it was shared anonymously, show the cleaned ` +
+          `version, and note that anyone can query it with /wisdom.`,
+      },
+    ]),
     maxOutputTokens: 400,
     maxRetries: 1,
   }).toUIMessageStreamResponse(streamErrorOptions);
@@ -153,8 +285,12 @@ async function handleWisdom(
 
   return streamText({
     model,
-    system,
-    prompt: cmd.arg || "What wisdom does the community pool hold?",
+    messages: withPersonaLead(system, [
+      {
+        role: "user",
+        content: cmd.arg || "What wisdom does the community pool hold?",
+      },
+    ]),
     maxOutputTokens: 800,
     maxRetries: 1,
   }).toUIMessageStreamResponse(streamErrorOptions);
@@ -167,24 +303,52 @@ export async function POST(req: Request) {
   const withMemory = memoryEnabled !== false;
 
   const cmd = parseSlashCommand(lastUserText(messages));
+  if (cmd?.name === "help") return helpResponse();
   if (cmd?.name === "share") return handleShare(cmd, safeId, withMemory);
   if (cmd?.name === "wisdom") return handleWisdom(cmd, safeId, withMemory);
 
   const baseModel = buildChatModel();
-  const model = withMemory
-    ? withMemWal(baseModel, memwalOptions(namespace))
-    : baseModel;
+
+  // Analytical commands get one authoritative memory list injected
+  // directly. The middleware is bypassed for these turns so the model
+  // never sees two conflicting memory sources.
+  const isGroundedCommand =
+    !!cmd && MEMORY_GROUNDED_COMMANDS.has(cmd.name) && withMemory;
+  const model =
+    withMemory && !isGroundedCommand
+      ? withMemWal(baseModel, memwalOptions(namespace))
+      : baseModel;
+
+  let memoryBlock = "";
+  if (isGroundedCommand) {
+    const mems = await recallFromNamespace(
+      namespace,
+      "personal facts, history, goals, and traits",
+      20
+    );
+    memoryBlock =
+      "\n\nCOMPLETE VERIFIED MEMORY LIST for this visitor. There are no " +
+      "other stored memories. Base your answer strictly on these:\n" +
+      (mems.length > 0
+        ? mems
+            .map((m, i) => `${i + 1}. [${m.createdAt ?? "date unknown"}] ${m.text}`)
+            .join("\n")
+        : "(no memories stored yet)");
+  }
 
   const instruction = cmd ? commandInstruction(cmd) : "";
-  const system = instruction ? `${SYSTEM_PROMPT}\n\n${instruction}` : SYSTEM_PROMPT;
+  const system =
+    SYSTEM_PROMPT + (instruction ? `\n\n${instruction}` : "") + memoryBlock;
   const finalMessages = cmd
     ? withRewrittenPrompt(messages, effectivePrompt(cmd))
     : messages;
 
   const result = streamText({
     model,
-    system,
-    messages: await convertToModelMessages(finalMessages),
+    messages: withPersonaLead(
+      system,
+      await convertToModelMessages(finalMessages)
+    ),
     // The GLM models are reasoning models: they need headroom for the
     // thinking trace before the final answer is produced.
     maxOutputTokens: 1500,

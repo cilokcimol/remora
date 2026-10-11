@@ -65,18 +65,7 @@ export function effectivePrompt(cmd: SlashCommand): string {
  */
 export function commandInstruction(cmd: SlashCommand): string {
   switch (cmd.name) {
-    case "help":
-      return [
-        "List every slash command the user can use, one short line each.",
-        "Commands: /timetravel followed by a what if scenario about a past decision,",
-        "/mentor followed by the name of a famous figure, /insight to surface hidden",
-        "patterns across memories, /blindspot to resurface forgotten ideas and promises,",
-        "/mybook to draft life story chapters, /testme for a memory quiz, /share followed",
-        "by a tip to share anonymously with the community pool, /wisdom followed by a",
-        "question to answer from community tips, /incognito followed by a label and a secret",
-        "to store with full client side encryption, /reveal followed by a label to decrypt",
-        "a stored secret locally. Keep the whole list tight.",
-      ].join(" ");
+    // NB: /help is answered deterministically in the route, never by the model.
     case "timetravel":
       return (
         `The user asks for a time travel simulation. Their scenario: "${cmd.arg}". ` +

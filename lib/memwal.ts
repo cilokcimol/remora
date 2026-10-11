@@ -49,7 +49,10 @@ export function memwalOptions(namespace: string): WithMemWalOptions {
     namespace,
     maxMemories: 5,
     autoSave: true,
-    minRelevance: 0.3,
+    // Low enough that broad queries ("what do you remember about me")
+    // still surface memories; the model is instructed to ignore
+    // anything irrelevant.
+    minRelevance: 0.15,
   };
 }
 
