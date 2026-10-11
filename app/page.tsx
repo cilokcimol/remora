@@ -5,6 +5,7 @@ import Hero from "@/components/Hero";
 import Marquee from "@/components/Marquee";
 import FeatureCards from "@/components/FeatureCards";
 import MemoryDemo from "@/components/MemoryDemo";
+import UpgradeFeatures from "@/components/UpgradeFeatures";
 import Manifesto from "@/components/Manifesto";
 import FooterPanels from "@/components/FooterPanels";
 import Reveal from "@/components/Reveal";
@@ -17,6 +18,7 @@ export default function Home() {
       <Marquee />
       <FeatureCards />
       <MemoryDemo />
+      <UpgradeFeatures />
       <Manifesto />
       <FooterPanels />
       <footer className="border-t border-white/10 bg-[#0a0d12]">

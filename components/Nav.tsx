@@ -6,6 +6,7 @@ const LINKS = [
   { label: "Chat", href: "#chat" },
   { label: "Memory", href: "#memory" },
   { label: "Demo", href: "#demo" },
+  { label: "Upgrade", href: "#upgrade" },
   { label: "Manifesto", href: "#manifesto" },
 ];
 
